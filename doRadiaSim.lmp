@@ -1,0 +1,80 @@
+#variable pka_id equal $pka_id
+#variable pka_velocity equal $pka_velocity
+#variable output_file equal $output_file
+
+## This part defines units and atomic information
+#General
+units			metal
+atom_style		charge
+atom_modify map yes
+timestep	    1.0e-4
+
+read_data SiO2T0.1.data
+
+##Pair Potentials
+pair_style    	hybrid/overlay coul/long 12.0 table linear 24000 
+#pair_style     table linear 60000
+#BKS
+########################################################################
+#####To accelerate K-space computation#################################
+#####change this cmd in productive run#################################
+kspace_style	pppm 1.0e-4
+########################################################################
+pair_coeff      * * coul/long
+
+#potential table
+pair_coeff    	2 2 table tablePotZblandMorse.dat O-O 12.0
+pair_coeff    	1 2 table tablePotZblandMorse.dat Si-O 12.0
+pair_coeff      1 1 table tablePotZblandMorse.dat Si-Si 12.0
+
+
+#Neighbor style
+neighbor		3.0 bin
+neigh_modify	check yes every 1 delay 0 
+#set PKA group id == 687 == O
+#464 == Si
+group PKA id ${pka_id}
+
+#velocity all create 0.1 389484
+#====================================
+fix zm all momentum 1000 linear 1 1 1
+#equilibrium=======================
+#NVE irradiate at 0.1K
+fix 1 all nve 
+fix 2 all temp/berendsen 0.1 0.1 0.05
+thermo 10000
+thermo_style custom step temp enthalpy etotal ke pe vol press density
+run  10000
+unfix 1
+unfix 2
+
+reset_timestep 0
+
+write_data SiO2T0.1_zbl.data nocoeff
+#irradiate=======================
+#NVE irradiate at 0.1K
+velocity PKA set ${pka_v_x} ${pka_v_y} ${pka_v_z}
+fix 1 all nve
+fix 2 all temp/berendsen 0.1 0.1 0.05
+thermo 500
+thermo_style custom step temp enthalpy ke pe etotal vol press density
+#run  200000
+
+compute 1 all voronoi/atom occupation
+#compute 2 all voronoi/atom neighbors yes
+#compute 2 all stress/atom NULL
+#variable stressx atom c_2[1]/c_1[1]
+compute Ke_atom all ke/atom
+compute Pe_atom all pe/atom
+variable E_total atom c_Ke_atom+c_Pe_atom
+dump 1 all custom 10 ${output_file} id type x y z ix iy iz c_1[1] c_1[2] c_Ke_atom c_Pe_atom v_E_total
+#dump 2 all local 1000 Si464_1000ev_1_neighbors.data index c_2[1] c_2[2] c_2[3]
+dump_modify 1 sort id
+#dump_modify 2 sort id
+run ${steps} 
+unfix 1
+unfix 2
+reset_timestep 0
+
+set group all image 0 0 0
+write_data config_test.data nocoeff

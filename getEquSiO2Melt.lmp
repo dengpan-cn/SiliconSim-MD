@@ -1,0 +1,72 @@
+## This part defines units and atomic information
+#General
+units			metal
+atom_style		charge
+timestep	    1.0e-3
+
+read_data initCrtstalSiO2.data
+
+##Pair Potentials
+pair_style    	hybrid/overlay coul/long 12.0 morse 15 table linear 24000 
+#BKS
+########################################################################
+#####To accelerate K-space computation#################################
+#####change this cmd in productive run#################################
+kspace_style	pppm 1.0e-4
+########################################################################
+pair_coeff      * * coul/long
+
+pair_coeff    	1 1 morse 0.0 1.0 0.0                #No interactions between Si atoms
+pair_coeff   	1 2 morse 0.340554 2.006700 2.100000
+pair_coeff    	2 2 morse 0.042395  1.379316 3.618701         #BKS interaction in PRL 64 1955 (1990)
+#hard-core repulsion
+pair_coeff    	2 2 table tablePotMorse.dat O-O 12.0
+pair_coeff    	1 2 table tablePotMorse.dat Si-O 12.0 
+
+#Neighbor style
+neighbor		3.0 bin
+neigh_modify	check yes every 1 delay 0 
+
+velocity all create 5e2 389484
+
+#====================================
+fix zm all momentum 1000 linear 1 1 1
+
+#heating
+fix 1 all npt temp 5e2 1E4 0.05 iso 1.0 1.0 0.5
+thermo 1000
+thermo_style custom step temp enthalpy etotal press density
+run  2000000
+unfix 1
+reset_timestep 0
+
+#NPT mixing at 1E4 K
+fix 1 all npt temp 1E4 1E4 0.05 iso 1.0 1.0 0.5
+thermo 1000
+thermo_style custom step temp enthalpy etotal press density
+run  2000000
+unfix 1
+reset_timestep 0
+
+set group all image 0 0 0
+write_data eauSiO2T1e4.data nocoeff
+
+#quench to 5E3 K
+fix 1 all npt temp 1E4 6100 0.05 iso 1.0 1.0 0.5
+thermo 1000
+thermo_style custom step temp enthalpy etotal press density
+run  2000000
+unfix 1
+reset_timestep 0
+
+#NPT Run at 6100 K
+fix 1 all npt temp 6100 6100 0.05 iso 1.0 1.0 0.5
+thermo 1000
+thermo_style custom step temp enthalpy etotal press density
+run  2000000
+unfix 1
+reset_timestep 0
+
+set group all image 0 0 0
+write_data equSiO2T6100.data nocoeff
+
