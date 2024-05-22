@@ -1,5 +1,5 @@
 # SiliconSim-MD
-Scripts to prepare equilibrium silicon melts and simulate microscopic processes under radiation.
+Scripts to prepare equilibrium silicon melts and simulate microscopic processes under radiation. Two example configurations are provided.
 
 1. getEquSiO2Melt.lmp: LAMMPS scripts to prepare equilibrium silicon melts.
 2. doRadiaSim.lmp: LAMMPS scripts to simulate microscopic processes under radiation.
@@ -11,4 +11,5 @@ Scripts to prepare equilibrium silicon melts and simulate microscopic processes 
 Reference
 
 [1] A. Pedone, G. Malavasi, M. C. Menziani, A. N. Cormack, and U. Segre, The Journal of Physical Chemistry B 110, 11780 (2006).
+
 [2] J. F. Ziegler, J. P. Biersack, and U. Littmark. In The Stopping and Range of Ions in Matter, volume 1, New York, 1985. Pergamon.   
